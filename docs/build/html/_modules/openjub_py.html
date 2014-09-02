@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>openjub_py &mdash; openjub-py 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="openjub-py 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">openjub-py 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for openjub_py</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../index.html#openjub_py.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">():</span>
+  <span class="sd">&quot;&quot;&quot;A Client for the OpenJUB-API.</span>
+
+<span class="sd">  :param token: Token to use for authentication.</span>
+<span class="sd">  :param app_id: App Id to be used only when using authentication.</span>
+<span class="sd">  :param server: The Address of the OpenJUB server to use. Must include protocol, port and ending slash.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">allFields</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;firstName&quot;</span><span class="p">,</span> <span class="s">&quot;lastName&quot;</span><span class="p">,</span> <span class="s">&quot;eid&quot;</span><span class="p">,</span> <span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;email&quot;</span><span class="p">,</span> <span class="s">&quot;username&quot;</span><span class="p">,</span> <span class="s">&quot;major&quot;</span><span class="p">,</span> <span class="s">&quot;country&quot;</span><span class="p">,</span> <span class="s">&quot;description&quot;</span><span class="p">]</span>
+  <span class="sd">&quot;&quot;&quot; All possible fields that are availablw to the server. &quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">server</span> <span class="o">=</span> <span class="s">&quot;http://open.jacobs-cs.club/&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constructor. &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">app_id</span> <span class="o">=</span> <span class="n">app_id</span>
+  <span class="k">def</span> <span class="nf">__request__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_point</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">post_params</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a generic request to the server.</span>
+
+<span class="sd">    :param end_point: Endpoint to request on the server</span>
+<span class="sd">    :param get_params: GET Parameters for the request.</span>
+<span class="sd">    :param post_params: POST Parameters for the request.</span>
+<span class="sd">    :returns: JSON-response to the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">get_params</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">get_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">+</span> <span class="n">end_point</span> <span class="o">+</span> <span class="s">&quot;/?&quot;</span> <span class="o">+</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlencode</span><span class="p">(</span><span class="n">get_params</span><span class="p">)</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;Authorization&quot;</span><span class="p">:</span> <span class="s">&quot;Bearer &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">post_params</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_params</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_params</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+<div class="viewcode-block" id="Client.user"><a class="viewcode-back" href="../index.html#openjub_py.Client.user">[docs]</a>  <span class="k">def</span> <span class="nf">user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">skip</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The /user endpoint.</span>
+
+<span class="sd">    :param q: Query to filter users</span>
+<span class="sd">    :param limit: Number of elements on one page</span>
+<span class="sd">    :param skip: Number of elements on one page</span>
+<span class="sd">    :param fields: List of Fields to return. Defaults to all fields.</span>
+<span class="sd">    :returns: JSON-response to the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fields</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">fields</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">allFields</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__request__</span><span class="p">(</span><span class="s">&quot;user&quot;</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;q&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span> <span class="s">&quot;limit&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">limit</span><span class="p">),</span> <span class="s">&quot;skip&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">skip</span><span class="p">),</span> <span class="s">&quot;fields&quot;</span><span class="p">:</span> <span class="s">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="p">)})</span>
+</div>
+<div class="viewcode-block" id="Client.user_autocomplete"><a class="viewcode-back" href="../index.html#openjub_py.Client.user_autocomplete">[docs]</a>  <span class="k">def</span> <span class="nf">user_autocomplete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">skip</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The /user/autocomplete endpoint.</span>
+
+<span class="sd">    :param account: Account to look for.</span>
+<span class="sd">    :param fields: List of Fields to return. Defaults to all fields.</span>
+<span class="sd">    :returns: JSON-response to the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">fields</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">fields</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">allFields</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__request__</span><span class="p">(</span><span class="s">&quot;user/autocomplete&quot;</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;q&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span> <span class="s">&quot;limit&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">limit</span><span class="p">),</span> <span class="s">&quot;skip&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">skip</span><span class="p">),</span> <span class="s">&quot;fields&quot;</span><span class="p">:</span> <span class="s">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="p">)})</span>
+</div>
+<div class="viewcode-block" id="Client.user_account"><a class="viewcode-back" href="../index.html#openjub_py.Client.user_account">[docs]</a>  <span class="k">def</span> <span class="nf">user_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The /user/:account endpoint.</span>
+
+<span class="sd">    :param account: Account to look for.</span>
+<span class="sd">    :param fields: List of Fields to return. Defaults to all fields.</span>
+<span class="sd">    :returns: JSON-response to the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fields</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">fields</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">allFields</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__request__</span><span class="p">(</span><span class="s">&quot;user/&quot;</span><span class="o">+</span><span class="n">account</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;fields&quot;</span><span class="p">:</span> <span class="s">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="p">)})</span></div>
+<div class="viewcode-block" id="Client.user_eid"><a class="viewcode-back" href="../index.html#openjub_py.Client.user_eid">[docs]</a>  <span class="k">def</span> <span class="nf">user_eid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The /user/eid/:eid endpoint.</span>
+
+<span class="sd">    :param eid: eid to look for.</span>
+<span class="sd">    :param fields: List of Fields to return. Defaults to all fields.</span>
+<span class="sd">    :returns: JSON-response to the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fields</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">fields</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">allFields</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__request__</span><span class="p">(</span><span class="s">&quot;user/eid/&quot;</span><span class="o">+</span><span class="n">eid</span><span class="p">,</span> <span class="n">get_params</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;fields&quot;</span><span class="p">:</span> <span class="s">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="p">)})</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">openjub-py 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Tom Wiesing.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
